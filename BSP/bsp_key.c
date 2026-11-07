@@ -50,6 +50,19 @@ uint8_t Key_Check(uint8_t n, uint8_t Flag)
     return hit;
 }
 
+//uint8_t Key_Check(uint8_t n, uint8_t Flag)
+//{
+//	if (Key_Flag[n] & Flag)
+//	{
+//		if (Flag != KEY_HOLD)
+//		{
+//			Key_Flag[n] &= ~Flag;
+//		}
+//		return 1;
+//	}
+//	return 0;
+//}
+
 uint8_t Key_GetState(uint8_t Key)//ÅÐ¶Ï°´¼ü°´ÏÂ
 {
 	if (Key == KEY_1)

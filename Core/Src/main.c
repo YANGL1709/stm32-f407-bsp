@@ -24,6 +24,7 @@
 #include "bsp_gpio.h"
 #include "bsp_key.h" 
 #include "bsp_tim.h"
+#include "bsp_uart.h"
 
 /* USER CODE END Includes */
 
@@ -94,7 +95,10 @@ int main(void)
   BspLed_Init();
   Bsp_Key_Init();
   Bsp_Tim_Init();
-  
+  BspUart_Init();
+
+BspUart_SendString("hello\r\n");
+
 
   /* USER CODE END 2 */
 
@@ -133,6 +137,8 @@ int main(void)
     if (sing) BspLed_On();
     if (dbl)  BspLed_Off();
     if (lng)  BspLed_Toggle();
+
+  
 
   
     /* USER CODE END WHILE */
