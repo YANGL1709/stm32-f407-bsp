@@ -5,6 +5,13 @@
 #define UART1_TX           9
 #define UART1_RX           10
 
+volatile uint32_t g_rx_cnt;
+
+volatile uint8_t g_rx_byte[64];	
+
+volatile uint8_t rx_flag=0;
+ 
+
 
 void BspUart_Init(void)
 {
@@ -32,7 +39,10 @@ void BspUart_Init(void)
 	UART1_PORT->AFR[1]    |= (7U<<8);
 	
 	USART1->BRR=84000000U/115200U;
-	USART1->CR1=USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
+	USART1->CR1=USART_CR1_TE | USART_CR1_RE | USART_CR1_UE| USART_CR1_RXNEIE | USART_CR1_IDLEIE;
+	
+	NVIC_SetPriority(USART1_IRQn, 4);       /* 比 TIM2(5) 高一点，串口容易溢出 */
+    NVIC_EnableIRQ(USART1_IRQn);
 	
 	
 	
@@ -47,9 +57,31 @@ void BspUart_SendByte(uint8_t buff)
 
 void BspUart_SendString(const char *s)
 {
-    while (*s) BspUart_SendByte((uint8_t)*s++);
-	
-	  
-	 
+    while (*s) BspUart_SendByte((uint8_t)*s++); 
 		
 }
+
+void USART1_IRQHandler(void)
+{
+	
+	 uint32_t sr = USART1->SR;   
+	
+    if (sr & USART_SR_RXNE)
+    {
+        uint8_t b = (uint8_t)USART1->DR;   /* 读 DR：清 RXNE（顺带清 IDLE） */
+
+        if (g_rx_cnt < (sizeof(g_rx_byte) - 1U))
+            g_rx_byte[g_rx_cnt++] = b;
+    }
+	if (sr & USART_SR_IDLE)
+	{
+        (void)USART1->DR;                  /* 再读 DR 清 IDLE */
+        g_rx_byte[g_rx_cnt] = 0;           /* ★ 补结束符 */
+        rx_flag  = 1;
+        g_rx_cnt = 0;
+	}
+
+}
+
+
+ 

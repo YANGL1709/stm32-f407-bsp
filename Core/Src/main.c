@@ -25,6 +25,7 @@
 #include "bsp_key.h" 
 #include "bsp_tim.h"
 #include "bsp_uart.h"
+#include <string.h>
 
 /* USER CODE END Includes */
 
@@ -96,8 +97,9 @@ int main(void)
   Bsp_Key_Init();
   Bsp_Tim_Init();
   BspUart_Init();
+  uint32_t last=0;
 
-BspUart_SendString("hello\r\n");
+
 
 
   /* USER CODE END 2 */
@@ -137,8 +139,15 @@ BspUart_SendString("hello\r\n");
     if (sing) BspLed_On();
     if (dbl)  BspLed_Off();
     if (lng)  BspLed_Toggle();
-
-  
+//	  BspUart_SendByte(g_rx_byte);   /* 只打印"最后一个字节" */
+////    HAL_Delay(100);
+	if (rx_flag)
+	{
+		BspUart_SendString((const char *)g_rx_byte);
+		BspUart_SendString("\r\n");
+		memset((void *)g_rx_byte, 0, sizeof(g_rx_byte));
+		rx_flag = 0;
+	}
 
   
     /* USER CODE END WHILE */
