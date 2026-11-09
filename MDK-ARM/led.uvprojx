@@ -544,6 +544,16 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\bsp_uart.h</FilePath>
             </File>
+            <File>
+              <FileName>ring_buff.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\ring_buff.c</FilePath>
+            </File>
+            <File>
+              <FileName>ring_buff.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\ring_buff.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

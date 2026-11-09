@@ -25,6 +25,7 @@
 #include "bsp_key.h" 
 #include "bsp_tim.h"
 #include "bsp_uart.h"
+#include "ring_buff.h"
 #include <string.h>
 
 /* USER CODE END Includes */
@@ -98,6 +99,9 @@ int main(void)
   Bsp_Tim_Init();
   BspUart_Init();
   uint32_t last=0;
+  uint8_t frame[UART_RX_BUF_SIZE];  
+  extern stRingBufTdf s_rx;  
+
 
 
 
@@ -141,13 +145,28 @@ int main(void)
     if (lng)  BspLed_Toggle();
 //	  BspUart_SendByte(g_rx_byte);   /* 只打印"最后一个字节" */
 ////    HAL_Delay(100);
-	if (rx_flag)
-	{
-		BspUart_SendString((const char *)g_rx_byte);
-		BspUart_SendString("\r\n");
-		memset((void *)g_rx_byte, 0, sizeof(g_rx_byte));
-		rx_flag = 0;
-	}
+    if (g_frame_ready)                            /* M3 */
+    {
+        uint32_t n = g_frame_len;                 /* M5 先快照 */
+        g_frame_ready = 0;                        /* M6 尽早清标志 */
+
+        if (n >= sizeof(frame))                   /* M8 截断保护 */
+            n = sizeof(frame) - 1U;
+
+        uint32_t got = 0;
+        for (uint32_t i = 0; i < n; i++)          /* M10 */
+        {
+            uint8_t c;
+            if (ucRingBufRead(&s_rx, &c) != 0)    /* M13 0=成功 */
+                break;
+            frame[got++] = c;
+        }
+        frame[got] = 0;                           /* M18 补结束符 */
+
+        BspUart_SendString((const char *)frame);  /* M20 */
+        BspUart_SendString("\r\n");               /* M21 */
+    }
+}
 
   
     /* USER CODE END WHILE */
@@ -155,7 +174,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
-}
+
 
 /**
   * @brief System Clock Configuration

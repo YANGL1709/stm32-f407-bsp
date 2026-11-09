@@ -1,15 +1,24 @@
 #include "bsp_uart.h"
 #include "main.h"
+#include "ring_buff.h"
 
 #define UART1_PORT         GPIOA
 #define UART1_TX           9
 #define UART1_RX           10
 
-volatile uint32_t g_rx_cnt;
 
-volatile uint8_t g_rx_byte[64];	
+/* 环形缓冲的存储区（改完类型后就是 128 字节） */
+uint8_t     s_rx_mem[UART_RX_BUF_SIZE];
+stRingBufTdf s_rx;
 
-volatile uint8_t rx_flag=0;
+volatile uint32_t g_frame_len   = 0;
+volatile uint8_t  g_frame_ready = 0;
+volatile uint32_t g_uart_drop   = 0;
+
+
+
+
+
  
 
 
@@ -44,6 +53,7 @@ void BspUart_Init(void)
 	NVIC_SetPriority(USART1_IRQn, 4);       /* 比 TIM2(5) 高一点，串口容易溢出 */
     NVIC_EnableIRQ(USART1_IRQn);
 	
+	 vRingBufInit(&s_rx, UART_RX_BUF_SIZE, s_rx_mem);
 	
 	
 
@@ -70,17 +80,22 @@ void USART1_IRQHandler(void)
     {
         uint8_t b = (uint8_t)USART1->DR;   /* 读 DR：清 RXNE（顺带清 IDLE） */
 
-        if (g_rx_cnt < (sizeof(g_rx_byte) - 1U))
-            g_rx_byte[g_rx_cnt++] = b;
+        if (ucRingBufWrite(&s_rx, b) != 0) /* ★ 0 = 成功 */
+            g_uart_drop++;                 /* 满了，记一笔 */
     }
 	if (sr & USART_SR_IDLE)
 	{
         (void)USART1->DR;                  /* 再读 DR 清 IDLE */
-        g_rx_byte[g_rx_cnt] = 0;           /* ★ 补结束符 */
-        rx_flag  = 1;
-        g_rx_cnt = 0;
+		
+        uint32_t n = ucRingBufGetLength(&s_rx);
+        if (n > 0)                         /* 池子里有货，才算一帧 */
+        {
+            g_frame_len   = n;             /* 这一帧多长 */
+            g_frame_ready = 1;
 	}
 
+}
+	
 }
 
 
