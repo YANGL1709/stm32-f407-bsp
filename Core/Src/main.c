@@ -98,7 +98,6 @@ int main(void)
   Bsp_Key_Init();
   Bsp_Tim_Init();
   BspUart_Init();
-  uint32_t last=0;
   uint8_t frame[UART_RX_BUF_SIZE];  
   extern stRingBufTdf s_rx;  
 
@@ -143,8 +142,8 @@ int main(void)
     if (sing) BspLed_On();
     if (dbl)  BspLed_Off();
     if (lng)  BspLed_Toggle();
-//	  BspUart_SendByte(g_rx_byte);   /* 只打印"最后一个字节" */
-////    HAL_Delay(100);
+////	  BspUart_SendByte(g_rx_byte);   /* 只打印"最后一个字节" */
+//////    HAL_Delay(100);
     if (g_frame_ready)                            /* M3 */
     {
         uint32_t n = g_frame_len;                 /* M5 先快照 */
@@ -166,6 +165,9 @@ int main(void)
         BspUart_SendString((const char *)frame);  /* M20 */
         BspUart_SendString("\r\n");               /* M21 */
     }
+	
+
+	
 }
 
   

@@ -554,6 +554,16 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\ring_buff.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_can_probe.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_can_probe.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_can_probe.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\bsp_can_probe.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
