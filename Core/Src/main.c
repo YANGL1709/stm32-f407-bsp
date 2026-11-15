@@ -26,6 +26,9 @@
 #include "bsp_tim.h"
 #include "bsp_uart.h"
 #include "ring_buff.h"
+#include "bsp_can_probe.h"
+#include "bsp_spi.h"
+#include "w25q32.h"
 #include <string.h>
 
 /* USER CODE END Includes */
@@ -95,14 +98,21 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   BspLed_Init();
+  W25Q32_Init();
   Bsp_Key_Init();
   Bsp_Tim_Init();
   BspUart_Init();
+  BspCanProbe_Init();
   uint8_t frame[UART_RX_BUF_SIZE];  
   extern stRingBufTdf s_rx;  
 
-
-
+  uint8_t mid=0;
+  uint8_t did=0;
+  uint8_t did2=0;
+  W25Q32_ReadID(&mid,&did,&did2);
+	BspUart_SendByte(mid);
+	BspUart_SendByte(did);
+	BspUart_SendByte(did2);
 
 
   /* USER CODE END 2 */
@@ -131,6 +141,8 @@ int main(void)
 //		}
 
     uint8_t sing = 0, dbl = 0, lng = 0;
+	  
+	  BspCanProbe_Toggle();
 
     for (uint8_t k = KEY_1; k <= KEY_2; k++)
     {
@@ -169,6 +181,10 @@ int main(void)
 
 	
 }
+
+  
+
+
 
   
     /* USER CODE END WHILE */

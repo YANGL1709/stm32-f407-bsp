@@ -15,7 +15,7 @@ void BspCanProbe_Init(void)
 
 }
 
-void BspCanProbe_Drive(void)
+void BspCanProbe_Toggle(void)
 {
 		    GPIOB->BSRR = (1U << (9 + 16));        /* PB9 = 0 ¡ú ÏÔÐÔ */
 		for (volatile uint32_t i = 0; i < 200U; i++) { }

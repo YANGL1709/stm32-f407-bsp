@@ -564,6 +564,26 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\bsp_can_probe.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_spi.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\bsp_spi.h</FilePath>
+            </File>
+            <File>
+              <FileName>w25q32.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\w25q32.h</FilePath>
+            </File>
+            <File>
+              <FileName>w25q32.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\w25q32.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

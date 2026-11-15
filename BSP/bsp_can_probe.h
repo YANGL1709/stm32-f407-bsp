@@ -5,7 +5,7 @@
 
 
 void BspCanProbe_Init(void);      /* PB9 = 推挽输出，初始隐性 */
-void BspCanProbe_Drive(void);       /* 翻转一次：低约 100μs → 高约 100μs */
+void BspCanProbe_Toggle(void);       /* 翻转一次：低约 100μs → 高约 100μs */
 
 
 
