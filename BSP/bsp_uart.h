@@ -2,6 +2,7 @@
 #define __BSP_UART_H
 
 #include "main.h"
+#include "stdio.h"
 
 #define UART_RX_BUF_SIZE  128U
 

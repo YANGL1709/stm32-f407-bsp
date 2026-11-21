@@ -110,9 +110,10 @@ int main(void)
   uint8_t did=0;
   uint8_t did2=0;
   W25Q32_ReadID(&mid,&did,&did2);
-	BspUart_SendByte(mid);
-	BspUart_SendByte(did);
-	BspUart_SendByte(did2);
+	printf("%x  ",mid);
+	printf("%x  ",did);
+	printf("%x  ",did2);
+	printf("abc\n");
 
 
   /* USER CODE END 2 */
@@ -174,8 +175,8 @@ int main(void)
         }
         frame[got] = 0;                           /* M18 ²¹½áÊø·û */
 
-        BspUart_SendString((const char *)frame);  /* M20 */
-        BspUart_SendString("\r\n");               /* M21 */
+		printf("%s\r\n", (const char *)frame);
+		
     }
 	
 

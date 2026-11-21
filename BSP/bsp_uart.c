@@ -2,6 +2,7 @@
 #include "main.h"
 #include "ring_buff.h"
 
+
 #define UART1_PORT         GPIOA
 #define UART1_TX           9
 #define UART1_RX           10
@@ -72,6 +73,13 @@ void BspUart_SendString(const char *s)
     while (*s) BspUart_SendByte((uint8_t)*s++); 
 		
 }
+
+int fputc(int ch,FILE * file)
+{
+	 BspUart_SendByte(ch);
+	return ch;
+}
+
 
 void USART1_IRQHandler(void)
 {
