@@ -208,6 +208,26 @@ int main(void)
 //		printf("%s\r\n", (const char *)frame);
 //		
 //    }
+
+ /* 2. 取回来 */
+	 
+	 CAN_SendMsg(0x155, tx, 8);
+	for (volatile uint32_t i = 0; i < 10000U; i++) { }  
+
+    CAN_ReceiveMsg(rx, &cnt);
+
+    /* 3. 打印 */
+
+
+    for (uint8_t i = 0; i < cnt; i++)
+    {
+        printf("id = %#05X, len = %u, data =",
+               (unsigned)rx[i].stdID, rx[i].len);
+	    for (uint8_t j = 0; j < rx[i].len && j < 8U; j++)
+            printf(" %02X", rx[i].data[j]);
+
+        printf("\r\n");
+    }
 	
 
 	

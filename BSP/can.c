@@ -1,4 +1,5 @@
 #include "can.h"
+#include "bsp_uart.h"
 
 #define CAN_BTR_500K_42M   ((0U << 24) | (1U << 20) | (10U << 16) | 5U)
 
@@ -27,7 +28,7 @@ void CAN_Init(void)
 	while (!(CAN1->MSR & CAN_MSR_INAK)) { }   /* 等 INAK 置位 = 进了初始化 */
 		
 	CAN1->MCR |= CAN_MCR_ABOM;   /* 自动离线恢复，调试期先开着 */
-	CAN1->BTR = CAN_BTR_500K_42M|CAN_BTR_SILM|CAN_BTR_LBKM;
+	CAN1->BTR = CAN_BTR_500K_42M;
 	
 		/*  退出初始化 */
 	CAN1->MCR &= ~CAN_MCR_INRQ;
@@ -86,9 +87,14 @@ void CAN_SendMsg(uint32_t stdID,uint8_t *data,uint8_t len)
 	
 	CAN1->sTxMailBox[0].TIR |= CAN_TI0R_TXRQ;
 	
-	while((CAN1->TSR & CAN_TSR_TME0)==0)       //TXOK0 是粘滞位，没清 → 第二次开始不等
-	{}
+	uint32_t t = 1000000U;
+	while (!(CAN1->TSR & CAN_TSR_TME0) && --t) { }
+	if (t == 0U)
+	{
+		printf("TX timeout TSR=%08X ESR=%08X\r\n",
+			   (unsigned)CAN1->TSR, (unsigned)CAN1->ESR);
 
+	}
 }
 
 void CAN_ReceiveMsg(RxMsg rxMsg[],uint8_t * msgCount)
