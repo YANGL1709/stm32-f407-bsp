@@ -26,10 +26,11 @@
 #include "bsp_tim.h"
 #include "bsp_uart.h"
 #include "ring_buff.h"
-#include "bsp_can_probe.h"
 #include "bsp_spi.h"
 #include "w25q32.h"
+#include "can.h"
 #include <string.h>
+#include "stdio.h"
 
 /* USER CODE END Includes */
 
@@ -102,18 +103,47 @@ int main(void)
   Bsp_Key_Init();
   Bsp_Tim_Init();
   BspUart_Init();
-  BspCanProbe_Init();
+   CAN_Init();
   uint8_t frame[UART_RX_BUF_SIZE];  
   extern stRingBufTdf s_rx;  
 
-  uint8_t mid=0;
-  uint8_t did=0;
-  uint8_t did2=0;
-  W25Q32_ReadID(&mid,&did,&did2);
-	printf("%x  ",mid);
-	printf("%x  ",did);
-	printf("%x  ",did2);
-	printf("abc\n");
+//  uint8_t mid=0;
+//  uint8_t did=0;
+//  uint8_t did2=0;
+//  W25Q32_ReadID(&mid,&did,&did2);
+//	printf("%x  ",mid);
+//	printf("%x  ",did);
+//	printf("%x  ",did2);
+//	printf("abc\n");
+	
+
+
+ uint8_t tx[8] = {0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88};
+    RxMsg   rx[3];           /* FIFO 深度是 3，正好够 */
+    uint8_t cnt = 0;
+
+    /* 1. 发一帧 */
+    CAN_SendMsg(0x155, tx, 8);
+
+    /* 2. 取回来 */
+    CAN_ReceiveMsg(rx, &cnt);
+
+    /* 3. 打印 */
+    printf("cnt = %u\r\n", cnt);
+
+    for (uint8_t i = 0; i < cnt; i++)
+    {
+        printf("id = %#05X, len = %u, data =",
+               (unsigned)rx[i].stdID, rx[i].len);
+	    for (uint8_t j = 0; j < rx[i].len && j < 8U; j++)
+            printf(" %02X", rx[i].data[j]);
+
+        printf("\r\n");
+    }
+    
+
+
+
 
 
   /* USER CODE END 2 */
@@ -122,7 +152,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  
+		//按键1
 //uint8_t e1 = Key_Check(KEY_1, KEY_SINGLE);
 //uint8_t e2 = Key_Check(KEY_2, KEY_SINGLE);
 //if (e1 | e2)          /* 用位或，两边都会执行 */
@@ -140,11 +170,9 @@ int main(void)
 //		{
 //			BspLed_Toggle();
 //		}
-
+		//按键2
     uint8_t sing = 0, dbl = 0, lng = 0;
 	  
-	  BspCanProbe_Toggle();
-
     for (uint8_t k = KEY_1; k <= KEY_2; k++)
     {
         sing |= Key_Check(k, KEY_SINGLE);
@@ -157,27 +185,29 @@ int main(void)
     if (lng)  BspLed_Toggle();
 ////	  BspUart_SendByte(g_rx_byte);   /* 只打印"最后一个字节" */
 //////    HAL_Delay(100);
-    if (g_frame_ready)                            /* M3 */
-    {
-        uint32_t n = g_frame_len;                 /* M5 先快照 */
-        g_frame_ready = 0;                        /* M6 尽早清标志 */
 
-        if (n >= sizeof(frame))                   /* M8 截断保护 */
-            n = sizeof(frame) - 1U;
+//串口
+//    if (g_frame_ready)                            /* M3 */
+//    {
+//        uint32_t n = g_frame_len;                 /* M5 先快照 */
+//        g_frame_ready = 0;                        /* M6 尽早清标志 */
 
-        uint32_t got = 0;
-        for (uint32_t i = 0; i < n; i++)          /* M10 */
-        {
-            uint8_t c;
-            if (ucRingBufRead(&s_rx, &c) != 0)    /* M13 0=成功 */
-                break;
-            frame[got++] = c;
-        }
-        frame[got] = 0;                           /* M18 补结束符 */
+//        if (n >= sizeof(frame))                   /* M8 截断保护 */
+//            n = sizeof(frame) - 1U;
 
-		printf("%s\r\n", (const char *)frame);
-		
-    }
+//        uint32_t got = 0;
+//        for (uint32_t i = 0; i < n; i++)          /* M10 */
+//        {
+//            uint8_t c;
+//            if (ucRingBufRead(&s_rx, &c) != 0)    /* M13 0=成功 */
+//                break;
+//            frame[got++] = c;
+//        }
+//        frame[got] = 0;                           /* M18 补结束符 */
+
+//		printf("%s\r\n", (const char *)frame);
+//		
+//    }
 	
 
 	
