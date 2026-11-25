@@ -118,31 +118,12 @@ int main(void)
 	
 
 
- uint8_t tx[8] = {0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88};
+    uint8_t tx[8] = {0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88};   //data
     RxMsg   rx[3];           /* FIFO 深度是 3，正好够 */
-    uint8_t cnt = 0;
-
-    /* 1. 发一帧 */
-    CAN_SendMsg(0x155, tx, 8);
-
-    /* 2. 取回来 */
-    CAN_ReceiveMsg(rx, &cnt);
-
-    /* 3. 打印 */
-    printf("cnt = %u\r\n", cnt);
-
-    for (uint8_t i = 0; i < cnt; i++)
-    {
-        printf("id = %#05X, len = %u, data =",
-               (unsigned)rx[i].stdID, rx[i].len);
-	    for (uint8_t j = 0; j < rx[i].len && j < 8U; j++)
-            printf(" %02X", rx[i].data[j]);
-
-        printf("\r\n");
-    }
-    
-
-
+    uint8_t cnt = 0;         //报文个数
+	
+	uint32_t last = 0;
+	volatile uint32_t g_can_rx_poll = 0;
 
 
 
@@ -209,31 +190,55 @@ int main(void)
 //		
 //    }
 
- /* 2. 取回来 */
+
 	 
-	 CAN_SendMsg(0x155, tx, 8);
-	for (volatile uint32_t i = 0; i < 10000U; i++) { }  
+//	 CAN_SendMsg(0X1718AAF1,1, tx, 8);
+//	 
+//	for (volatile uint32_t i = 0; i < 10000U; i++) { }  
 
-    CAN_ReceiveMsg(rx, &cnt);
+//    CAN_ReceiveMsg(rx, &cnt);
+//	
+//	for (uint8_t i = 0; i < cnt; i++)
+//	{
+//		if (rx[i].ide)
+//			printf("EXT id=%08X len=%u data=", (unsigned)rx[i].id, rx[i].len);
+//		else
+//			printf("STD id=%03X  len=%u data=", (unsigned)rx[i].id, rx[i].len);
 
-    /* 3. 打印 */
+//		for (uint8_t j = 0; j < rx[i].len; j++)
+//			printf("%02X ", rx[i].data[j]);
 
+//		printf("\r\n");
+//	}
 
-    for (uint8_t i = 0; i < cnt; i++)
-    {
-        printf("id = %#05X, len = %u, data =",
-               (unsigned)rx[i].stdID, rx[i].len);
-	    for (uint8_t j = 0; j < rx[i].len && j < 8U; j++)
-            printf(" %02X", rx[i].data[j]);
+	RxMsg m;
 
-        printf("\r\n");
-    }
+	//① 快速消费：只计数，不打印
+	while (CAN_PopRx(&m))
+	{
+		g_can_rx_poll++;          //主循环取走的帧数（可和 g_can_rx 对照）
+	}
+
+	//② 每 10 秒打印一次汇总
+	if (g_ms_tick - last >= 10000U)
+	{
+		last = g_ms_tick;
+
+		uint32_t esr = CAN1->ESR;
+
+		printf("[%us] rx=%u drop=%u ovr=%u TEC=%u REC=%u\r\n",
+		       (unsigned)(g_ms_tick / 1000U),
+		       (unsigned)g_can_rx,
+		       (unsigned)g_can_drop,
+			   (unsigned)g_can_ovr,   
+		       (unsigned)((esr >> 24) & 0xFFU),
+		       (unsigned)((esr >> 16) & 0xFFU));
+	}
 	
 
 	
 }
-
-  
+											  
 
 
 
