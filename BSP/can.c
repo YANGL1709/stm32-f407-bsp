@@ -27,7 +27,7 @@ void CAN_Init(void)
 	CAN1->MCR |= CAN_MCR_INRQ;
 	while (!(CAN1->MSR & CAN_MSR_INAK)) { }   /* 等 INAK 置位 = 进了初始化 */
 		
-	CAN1->MCR |= CAN_MCR_ABOM;   /* 自动离线恢复，调试期先开着 */
+//	CAN1->MCR |= CAN_MCR_ABOM;   /* 自动离线恢复，调试期先开着 */
 	CAN1->BTR = CAN_BTR_500K_42M;
 	
 		/*  退出初始化 */
@@ -39,7 +39,7 @@ void CAN_Init(void)
 	 
 	 CAN1->FM1R &=~CAN_FM1R_FBM0;   //过滤器0 32 位寄存器处于标识符屏蔽模式。
 	 
-	 CAN1->FS1R &=~CAN_FS1R_FSC0;  // 32 位尺度配置
+	 CAN1->FS1R |= CAN_FS1R_FSC0;   // 1 = 32 位尺度
 	 
 	 CAN1->FFA1R &= ~CAN_FFA1R_FFA0;    //关联fifo0
 	 
@@ -68,9 +68,10 @@ void CAN_SendMsg(uint32_t id, uint8_t ide, uint8_t *data, uint8_t len)
     if (ide) { if (id > 0x1FFFFFFFU) return; }   /* 29 位最大 */
     else     { if (id > 0x7FFU)      return; }   /* 11 位最大 */
 
-    /* ---- 等邮箱空 ---- */
-    while((CAN1->TSR & CAN_TSR_TME0) ==0)
-	{}
+    /* ---- 等邮箱空（带超时） ---- */
+    timeout = 200000U;
+    while ((CAN1->TSR & CAN_TSR_TME0) == 0U && --timeout) { }
+    if (timeout == 0U) return;          /* 邮箱一直不空，放弃这一帧 */
 
     /* ---- 拼 TIR ---- */
     /* TIR 布局：STID[31:21] | EXID[20:3] | IDE[2] | RTR[1] | TXRQ[0] */
@@ -146,6 +147,15 @@ void CAN_ReceiveMsg(RxMsg rxMsg[], uint8_t *msgCount)
 
 		CAN1->RF0R |= CAN_RF0R_RFOM0;      //释放邮箱
 	}
+}
+	// BusOff恢复函数
+void CAN_RecoverFromBusOff(void)
+{
+	CAN1->MCR |= CAN_MCR_INRQ;
+	while (!(CAN1->MSR & CAN_MSR_INAK)) { }
+
+	CAN1->MCR &= ~CAN_MCR_INRQ;
+	while (CAN1->MSR & CAN_MSR_INAK) { }
 }
 
 /* ================ 中断接收 ================ */

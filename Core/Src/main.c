@@ -122,8 +122,13 @@ int main(void)
     RxMsg   rx[3];           /* FIFO 深度是 3，正好够 */
     uint8_t cnt = 0;         //报文个数
 	
-	uint32_t last = 0;
+	uint32_t last_printf = 0;
+	uint32_t last_Send = 0;
+	
 	volatile uint32_t g_can_rx_poll = 0;
+	uint8_t  boff_last   = 0;
+    uint32_t recover_ms  = 0;      /* 按下按键那一刻的 g_ms_tick */
+    uint32_t recover_cnt = 0;      /* 按下按键那一刻的 TIM2->CNT */
 
 
 
@@ -133,6 +138,22 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	     uint32_t esr_now = CAN1->ESR;
+    uint8_t  boff    = (esr_now & CAN_ESR_BOFF) ? 1U : 0U;
+
+	if (boff_last && !boff)
+	{
+		uint32_t pm = __get_PRIMASK();
+		__disable_irq();
+		uint32_t now_ms  = g_ms_tick;
+		uint32_t now_cnt = TIM2->CNT;
+		__set_PRIMASK(pm);
+
+		uint32_t dt_us = (now_ms - recover_ms) * 1000U + (now_cnt - recover_cnt);
+		printf("<<< BOFF cleared: %u us\r\n", (unsigned)dt_us);
+	}
+    boff_last = boff;
+	  
 		//按键1
 //uint8_t e1 = Key_Check(KEY_1, KEY_SINGLE);
 //uint8_t e2 = Key_Check(KEY_2, KEY_SINGLE);
@@ -161,7 +182,18 @@ int main(void)
         lng  |= Key_Check(k, KEY_LONG) | Key_Check(k, KEY_REPEAT);
     }
 
-    if (sing) BspLed_On();
+    if (sing)
+	{
+		BspLed_On();
+
+		uint32_t pm = __get_PRIMASK();
+		__disable_irq();
+		recover_ms  = g_ms_tick;
+		recover_cnt = TIM2->CNT;
+		__set_PRIMASK(pm);
+
+		CAN_RecoverFromBusOff();
+	}
     if (dbl)  BspLed_Off();
     if (lng)  BspLed_Toggle();
 ////	  BspUart_SendByte(g_rx_byte);   /* 只打印"最后一个字节" */
@@ -219,20 +251,28 @@ int main(void)
 		g_can_rx_poll++;          //主循环取走的帧数（可和 g_can_rx 对照）
 	}
 
-	//② 每 10 秒打印一次汇总
-	if (g_ms_tick - last >= 10000U)
+	//② 每 1 秒打印一次汇总
+	if (g_ms_tick - last_printf >= 1000U)
 	{
-		last = g_ms_tick;
+		last_printf = g_ms_tick;
 
 		uint32_t esr = CAN1->ESR;
+		uint32_t tsr = CAN1->TSR;
 
-		printf("[%us] rx=%u drop=%u ovr=%u TEC=%u REC=%u\r\n",
+		printf("[%us] TEC=%u REC=%u LEC=%u ESR=%08X TSR=%08X %s\r\n",
 		       (unsigned)(g_ms_tick / 1000U),
-		       (unsigned)g_can_rx,
-		       (unsigned)g_can_drop,
-			   (unsigned)g_can_ovr,   
+		       (unsigned)((esr >> 16) & 0xFFU),
 		       (unsigned)((esr >> 24) & 0xFFU),
-		       (unsigned)((esr >> 16) & 0xFFU));
+		       (unsigned)((esr >> 4)  & 0x07U),
+		       (unsigned)esr, (unsigned)tsr,
+		       (esr & CAN_ESR_BOFF) ? "BUSOFF"  :
+		       (esr & CAN_ESR_EPVF) ? "PASSIVE" : "ACTIVE");
+	}
+	if (g_ms_tick - last_Send >= 100U)		
+	{
+		last_Send = g_ms_tick;
+		CAN_SendMsg(0X1718AAF1,1, tx, 8);
+	
 	}
 	
 

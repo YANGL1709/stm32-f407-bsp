@@ -22,6 +22,8 @@ extern volatile uint32_t g_can_rx;    //收到总帧数
 extern volatile uint32_t g_can_drop;  //队列满丢掉的帧数
 extern volatile uint32_t g_can_ovr;      //硬件 FIFO 溢出次数
 
+void CAN_RecoverFromBusOff(void);
+
 
 
 
