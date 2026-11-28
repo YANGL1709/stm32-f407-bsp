@@ -117,8 +117,10 @@ int main(void)
 //	printf("abc\n");
 	
 
-
+	uint32_t rx_in = 0, rx_out1 = 0, rx_out2 = 0;
     uint8_t tx[8] = {0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88};   //data
+	uint8_t tx1[8] = {0x81, 0xa2, 0x83, 0x48, 0xc5, 0x86, 0xd7, 0x88};   //data
+	uint8_t tx2[6] = {0xf7, 0xb2, 0x83, 0x84, 0xa5, 0xc1};   //data
     RxMsg   rx[3];           /* FIFO 深度是 3，正好够 */
     uint8_t cnt = 0;         //报文个数
 	
@@ -129,6 +131,12 @@ int main(void)
 	uint8_t  boff_last   = 0;
     uint32_t recover_ms  = 0;      /* 按下按键那一刻的 g_ms_tick */
     uint32_t recover_cnt = 0;      /* 按下按键那一刻的 TIM2->CNT */
+	
+	uint32_t t_last_loop = 0;
+	uint32_t max_dt      = 0;
+
+	t_last_loop = g_ms_tick;      /* ← 关键，跳过第一次 */
+	max_dt      = 0;
 
 
 
@@ -138,7 +146,13 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	     uint32_t esr_now = CAN1->ESR;
+	  
+	    uint32_t t_now = g_ms_tick;
+    uint32_t dt    = t_now - t_last_loop;
+    if (dt > max_dt) max_dt = dt;
+    t_last_loop = t_now;  
+	  
+	uint32_t esr_now = CAN1->ESR;
     uint8_t  boff    = (esr_now & CAN_ESR_BOFF) ? 1U : 0U;
 
 	if (boff_last && !boff)
@@ -242,16 +256,20 @@ int main(void)
 
 //		printf("\r\n");
 //	}
-
+	
 	RxMsg m;
 
 	//① 快速消费：只计数，不打印
 	while (CAN_PopRx(&m))
 	{
+		
+	if      (m.id == 0x1718DAF1) rx_in++;
+    else if (m.id == 0x17178544) rx_out1++;
+    else if (m.id == 0x17184474) rx_out2++;
 		g_can_rx_poll++;          //主循环取走的帧数（可和 g_can_rx 对照）
 	}
 
-	//② 每 1 秒打印一次汇总
+	//② 每 10 秒打印一次汇总
 	if (g_ms_tick - last_printf >= 1000U)
 	{
 		last_printf = g_ms_tick;
@@ -259,21 +277,25 @@ int main(void)
 		uint32_t esr = CAN1->ESR;
 		uint32_t tsr = CAN1->TSR;
 
-		printf("[%us] TEC=%u REC=%u LEC=%u ESR=%08X TSR=%08X %s\r\n",
+		printf("[%us] TEC=%u REC=%u LEC=%u  %s\r\n",
 		       (unsigned)(g_ms_tick / 1000U),
 		       (unsigned)((esr >> 16) & 0xFFU),
 		       (unsigned)((esr >> 24) & 0xFFU),
 		       (unsigned)((esr >> 4)  & 0x07U),
-		       (unsigned)esr, (unsigned)tsr,
+		       
 		       (esr & CAN_ESR_BOFF) ? "BUSOFF"  :
 		       (esr & CAN_ESR_EPVF) ? "PASSIVE" : "ACTIVE");
+		printf("    rx_in=%u rx_out1=%u rx_out2=%u  isr_rx=%u drop=%u ovr=%u max_loop=%ums\r\n",
+       (unsigned)rx_in, (unsigned)rx_out1, (unsigned)rx_out2,
+       (unsigned)g_can_rx, (unsigned)g_can_drop, (unsigned)g_can_ovr ,(unsigned)max_dt);
 	}
 	if (g_ms_tick - last_Send >= 100U)		
 	{
 		last_Send = g_ms_tick;
-		CAN_SendMsg(0X1718AAF1,1, tx, 8);
+		CAN_SendMsg(0X1718AAF1,1, tx, 8);		
 	
 	}
+
 	
 
 	

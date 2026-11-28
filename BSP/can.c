@@ -43,8 +43,8 @@ void CAN_Init(void)
 	 
 	 CAN1->FFA1R &= ~CAN_FFA1R_FFA0;    //关联fifo0
 	 
-	 CAN1->sFilterRegister[0].FR1=0;
-	 CAN1->sFilterRegister[0].FR2=0;
+	 CAN1->sFilterRegister[0].FR1=(0x1718AAF1U<<3U)|0x04;
+	 CAN1->sFilterRegister[0].FR2=(0xfff80000)|0x04;   
 	 
 	 CAN1->FA1R |=CAN_FA1R_FACT0;  // 过滤器 0 激活
 	 
@@ -55,8 +55,7 @@ void CAN_Init(void)
 	CAN1->IER |= CAN_IER_FMPIE0;
 	NVIC_SetPriority(CAN1_RX0_IRQn, 3);   //比 USART1(4)/TIM2(5) 高
 	NVIC_EnableIRQ(CAN1_RX0_IRQn);
-	 
-	 
+	
 }
 	   
 void CAN_SendMsg(uint32_t id, uint8_t ide, uint8_t *data, uint8_t len)
@@ -160,7 +159,7 @@ void CAN_RecoverFromBusOff(void)
 
 /* ================ 中断接收 ================ */
 
-#define CAN_RXQ_DEPTH   16U      //队列深度：8h 满载测试需要 16
+#define CAN_RXQ_DEPTH   48u      //队列深度
 
 static RxMsg            s_canq[CAN_RXQ_DEPTH];
 static volatile uint8_t s_qhead = 0;      //ISR 写
