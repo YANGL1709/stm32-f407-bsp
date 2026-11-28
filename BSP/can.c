@@ -127,7 +127,8 @@ void CAN_ReceiveMsg(RxMsg rxMsg[], uint8_t *msgCount)
 			msg->id = (rir >> 21) & 0x7FFU;    //ID
 		}
 
-		msg->len = (CAN1->sFIFOMailBox[0].RDTR >> 0) & 0x0F;   //DLC
+		msg->len = (CAN1->sFIFOMailBox[0].RDTR >> 0) & 0x0F;   /* DLC 0~15 */
+		if (msg->len > 8U) msg->len = 8U;                     /* 9~15 按 8 字节解释，防越界 */
 
 		uint32_t low  = CAN1->sFIFOMailBox[0].RDLR;            //低位数据
 		uint32_t high = CAN1->sFIFOMailBox[0].RDHR;            //高位数据
